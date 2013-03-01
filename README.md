@@ -1,7 +1,12 @@
 # Executable config on pure python
 
 ## Installation
-```python
+pip installation
+```
+pip install execconf
+```
+or via setup.py
+```
 python setup.py install
 ```
 
