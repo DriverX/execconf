@@ -146,7 +146,6 @@ class ConfigLoader(Loader):
         return include
 
     def _handle(self, filepath, _included=None):
-        ret = None
         if _included is None:
             _included = []
         if filepath in _included:
