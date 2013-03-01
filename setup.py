@@ -27,6 +27,14 @@ setup(name="execconf",
       packages=["execconf",
                 "execconf.tests",
                 "execconf.validator"],
-      package_data={"execconf.tests": get_tests_data()}
+      package_data={"execconf.tests": get_tests_data()},
+      classifiers=["License :: OSI Approved :: MIT License",
+                   "Programming Language :: Python",
+                   "Programming Language :: Python :: 2.7",
+                   "Development Status :: 4 - Beta",
+                   "Intended Audience :: Developers",
+                   "Intended Audience :: System Administrators",
+                   "Operating System :: Unix",
+                   "Topic :: Utilities"]
       )
 
