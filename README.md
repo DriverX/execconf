@@ -48,6 +48,15 @@ PASS = "ololo"
 OTHER = "OTHER"
 ```
 
+Import and use some package
+```python
+import os
+
+LOG_PATH = os.path.join("../logs", "some_log.txt")
+DEBUG = False
+```
+
+
 ## Validation example
 ```python
 BOOL_TRUE = Boolean()
