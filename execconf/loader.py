@@ -185,6 +185,8 @@ class ConfigLoader(Loader):
             if isinstance(default, basestring):
                 default_filepath = self._resolve_filepath(default)
                 self._handle(default_filepath)
+            elif isinstance(default, ModuleType):
+                self._default_data = self._filter_data(vars(default))
             elif isinstance(default, dict):
                 self._default_data = self._filter_data(default)
             else:
