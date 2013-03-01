@@ -222,6 +222,8 @@ class ValidatorLoader(Loader):
     def convert(self, data):
         AVT = None
         validation = data.get("EXEC_VALIDATION")
+        
+        # TODO
         only_declared = data.get("EXEC_ONLY_DECLARED", False)
         if validation is not None:
             if isinstance(validation, Dict):

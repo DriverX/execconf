@@ -8,6 +8,8 @@ class Validator(object):
 
         # Abstract Validation Tree
         self._AVT = AVT
+
+        # TODO
         self._only_decl = only_declared
 
     def cleanup(self):

@@ -3,7 +3,7 @@ class Builder(object):
         pass
 
     def build(self, data):
-        return
+        return data
 
 
 
