@@ -134,6 +134,14 @@ class TestLoader(unittest.TestCase):
     def test_validator(self):
         pass
 
+    def test_extra_data(self):
+        loader = Loader(path.join(MODULE_ROOT, "data"))
+        conf = loader.load("base.py", extra={"QUX": ["World"], "NEW": 1})
+
+        self.assertEqual(len(conf), 5)
+        self.assertEqual(conf.QUX[0], "World")
+        self.assertEqual(conf.NEW, 1)
+
 
 
 

@@ -78,16 +78,23 @@ class Loader(object):
         data = self._filter_data(data)
         return data
     
-    def _load(self, filepath):
+    def _load(self, filepath, extra=None):
         filepath = self._resolve_filepath(filepath)
         data = self._run_path(filepath)
+        
+        if extra is not None:
+            data = self._extend_data(data, extra)
 
         return data
+    
+    def _extend_data(self, data, extra_data):
+        data.update(extra_data)
+        return data
 
-    def load(self, filepath):
+    def load(self, filepath, extra=None):
         self.cleanup()
 
-        data = self._load(filepath)
+        data = self._load(filepath, extra=extra)
         conf = self.convert(data)
         return conf
 
@@ -167,10 +174,10 @@ class ConfigLoader(Loader):
         for f in self._files_queue:
             data = self._files_data[f]
             if data:
-                ret.update(data)
+                ret = self._extend_data(ret, data)
         return ret
 
-    def _load(self, filepath):
+    def _load(self, filepath, extra=None):
         validator = self._validator
         builder = self._builder
         default = self._default
@@ -187,6 +194,9 @@ class ConfigLoader(Loader):
         self._handle(filepath)
         
         data = self._get_result_data()
+        
+        if extra is not None:
+            data = self._extend_data(data, extra)
 
         if builder:
             data = builder.build(data)
@@ -201,9 +211,11 @@ class ConfigLoader(Loader):
 
 
 class ValidatorLoader(Loader):
-    def _load(self, filepath):
+    def _load(self, filepath, extra=None):
         filepath = self._resolve_filepath(filepath)
-        data = self._run_path(filepath, LOADER_GLOBALS) 
+        data = self._run_path(filepath, LOADER_GLOBALS)
+        if extra is not None:
+            data = self._extend_data(data, extra)
         return data
 
     def convert(self, data):
