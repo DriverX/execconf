@@ -206,7 +206,7 @@ class ConfigLoader(Loader):
 
         data = self._data
         if builder:
-            self._data = builder.build(data)
+            data = builder.build(data)
         
         if validator:
             data = validator.validate(data)
