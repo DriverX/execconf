@@ -6,6 +6,7 @@ from execconf import ConfigLoader as Loader, ValidatorLoader, Validator
 from execconf.exceptions import AbsPathError, NotFoundError, \
                                 NotFoundExtsError, UndeclaredExtError, \
                                 CircularIncludeError
+import data_defaults
 
 MODULE_ROOT = path.dirname(path.abspath(__file__))
 
@@ -48,13 +49,13 @@ class TestLoader(unittest.TestCase):
             with self.assertRaises(AbsPathError) as cm:
                 loader2.load("except_abspath.py")
 
-    def test_load_with_default(self):
-        loader1 = Loader(path.join(MODULE_ROOT, "data"), default="default.py")
+    def test_load_with_defaults(self):
+        loader1 = Loader(path.join(MODULE_ROOT, "data"), defaults="default.py")
         conf1 = loader1.load("base.py")
         conf2 = loader1.load("base2.py")
 
         loader2 = Loader(path.join(MODULE_ROOT, "data"),
-                default={
+                defaults={
                     "DEFAULT_DICT": True,
                     "FOO": False,
                     "__will_be_remove__": True})
@@ -62,10 +63,14 @@ class TestLoader(unittest.TestCase):
         conf4 = loader2.load("base2.py")
 
         loader3 = Loader(path.join(MODULE_ROOT, "data"),
-                default="notfound.py")
+                defaults="notfound.py")
 
         loader4 = Loader(path.join(MODULE_ROOT, "data"),
-                default=[])
+                defaults=[])
+        
+        loader5 = Loader(path.join(MODULE_ROOT, "data"),
+                defaults=data_defaults)
+        conf5 = loader5.load("base.py")
         
         self.assertEqual(len(conf1), 5)
         self.assertTrue(conf1.DEFAULT)
@@ -87,10 +92,14 @@ class TestLoader(unittest.TestCase):
         self.assertTrue("BASE1" not in conf4)
         self.assertTrue(conf4.BASE2)
 
+        self.assertEqual(len(conf5), 5)
+        self.assertTrue(conf5.DEFAULT)
+        self.assertEqual(conf5.FOO, "BAR")
+
         with self.assertRaises(NotFoundError) as cm:
             loader3.load("base.py")
 
-        with self.assertRaisesRegexp(TypeError, "default options must be") as cm:
+        with self.assertRaisesRegexp(TypeError, "defaults options must be") as cm:
             loader4.load("base.py")
     
     def test_exts(self):

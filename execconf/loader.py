@@ -14,9 +14,9 @@ __all__ = ["Loader", "ConfigLoader", "ValidatorLoader"]
 
 
 class Loader(object):
-    default_exts = ("py",)
+    defaults_exts = ("py",)
 
-    def __init__(self, directory, exts=None):
+    def __init__(self, directory, exts=None, defaults=None):
         self._directory = path.abspath(directory)
 
         if exts is not None:
@@ -25,11 +25,14 @@ class Loader(object):
             else:
                 exts = tuple(exts)
         else:
-            exts = self.default_exts
+            exts = self.defaults_exts
         self._exts = exts
+
+        self._defaults = defaults
+        self._data = {}
     
     def cleanup(self):
-        pass
+        self._data = {}
 
     def joinpath(self, *args):
         return path.join(self._directory, *args)
@@ -78,18 +81,38 @@ class Loader(object):
         data = self._filter_data(data)
         return data
     
+    def _load_defaults(self):
+        defaults = self._defaults
+        data = None
+        if defaults is not None:
+            if isinstance(defaults, basestring):
+                defaults_filepath = self._resolve_filepath(defaults)
+                data = self._run_path(defaults_filepath)
+            elif isinstance(defaults, ModuleType):
+                data = self._filter_data(vars(defaults))
+            elif isinstance(defaults, dict):
+                data = self._filter_data(defaults)
+
+            if data is not None:
+                self._extend_data(data)
+            else:
+                raise TypeError("defaults options must be string of path to file or dict or some package: %s", type(defaults))
+
     def _load(self, filepath, extra=None):
+        self._load_defaults()
+
         filepath = self._resolve_filepath(filepath)
         data = self._run_path(filepath)
+        self._extend_data(data)
         
         if extra is not None:
-            data = self._extend_data(data, extra)
+            self._extend_data(data, extra)
 
-        return data
+        return self._data
     
-    def _extend_data(self, data, extra_data):
-        data.update(extra_data)
-        return data
+    def _extend_data(self, extra_data):
+        self._data.update(extra_data)
+        return self._data
 
     def load(self, filepath, extra=None):
         self.cleanup()
@@ -107,7 +130,6 @@ class ConfigLoader(Loader):
             exts=None,
             builder=None,
             validator=None,
-            default=None,
             **kwargs):
         super(ConfigLoader, self).__init__(directory, exts=exts, **kwargs)
 
@@ -120,14 +142,10 @@ class ConfigLoader(Loader):
 
         self._files_data = {}
         self._files_queue = []
-
-        self._default = default
-        self._default_data = None
     
     def cleanup(self):
         super(ConfigLoader, self).cleanup()
 
-        self._default_data = None
         self._files_data = {}
         self._files_queue = []
 
@@ -166,45 +184,34 @@ class ConfigLoader(Loader):
             # add data
             self._files_data[filepath] = data
     
-    def _get_result_data(self):
-        ret = {}
-        if self._default_data:
-            ret.update(self._default_data)
+    def _collect_result_data(self):
         for f in self._files_queue:
             data = self._files_data[f]
             if data:
-                ret = self._extend_data(ret, data)
-        return ret
-
+                self._extend_data(data)
+    
     def _load(self, filepath, extra=None):
+        self._load_defaults()
+
         validator = self._validator
         builder = self._builder
-        default = self._default
-        if default is not None:
-            if isinstance(default, basestring):
-                default_filepath = self._resolve_filepath(default)
-                self._handle(default_filepath)
-            elif isinstance(default, ModuleType):
-                self._default_data = self._filter_data(vars(default))
-            elif isinstance(default, dict):
-                self._default_data = self._filter_data(default)
-            else:
-                raise TypeError("default options must be string of path to file or dict: %s", type(default))
-            
+         
         filepath = self._resolve_filepath(filepath)
         self._handle(filepath)
         
-        data = self._get_result_data()
+        self._collect_result_data()
         
         if extra is not None:
-            data = self._extend_data(data, extra)
+            self._extend_data(extra)
 
+        data = self._data
         if builder:
-            data = builder.build(data)
+            self._data = builder.build(data)
         
         if validator:
             data = validator.validate(data)
 
+        self._data = data
         return data
 
     def convert(self, data):
@@ -215,9 +222,11 @@ class ValidatorLoader(Loader):
     def _load(self, filepath, extra=None):
         filepath = self._resolve_filepath(filepath)
         data = self._run_path(filepath, LOADER_GLOBALS)
+        self._extend_data(data)
+
         if extra is not None:
-            data = self._extend_data(data, extra)
-        return data
+            self._extend_data(extra)
+        return self._data
 
     def convert(self, data):
         AVT = None
