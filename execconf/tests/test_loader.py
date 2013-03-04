@@ -2,7 +2,7 @@ import unittest
 import sys
 import os
 from os import path
-from execconf import ConfigLoader as Loader, ValidatorLoader, Validator
+from execconf import ConfigLoader as Loader, ValidatorLoader, Validator, Builder
 from execconf.exceptions import AbsPathError, NotFoundError, \
                                 NotFoundExtsError, UndeclaredExtError, \
                                 CircularIncludeError
@@ -142,6 +142,19 @@ class TestLoader(unittest.TestCase):
     # TODO
     def test_validator(self):
         pass
+
+    def test_builder(self):
+        class Builder1(Builder):
+            def build(self, data):
+                ret = data.copy()
+                ret["FOO"] = "BUILD"
+                return ret
+                    
+        loader1 = Loader(path.join(MODULE_ROOT, "data"), builder=Builder1())
+        conf1 = loader1.load("base.py")
+        self.assertEqual(len(conf1), 4)
+        self.assertEqual(conf1.FOO, "BUILD")
+        self.assertEqual(conf1["BAZ"], 123)
 
     def test_extra_data(self):
         loader = Loader(path.join(MODULE_ROOT, "data"))
