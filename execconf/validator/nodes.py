@@ -1,4 +1,5 @@
-from ..exceptions import ValidatorConvertError, ValidatorCheckError
+from ..exceptions import ValidatorConvertError, ValidatorCheckError, \
+                         ValidatorNodeError
 
 
 __all__ = [
@@ -194,10 +195,21 @@ class Option(Node):
         self._options = options
 
     def check(self, value):
-        if value not in self._options:
-            optprint = map(lambda x: unicode(x), self._options)
-            raise ValidatorCheckError("value %s not contains in options: %s" % (value, ", ".join(optprint)))
-        return value
+        found = None
+        for o in self._options:
+            if isinstance(o, Node):
+                try:
+                    found = o.check(value)
+                    break
+                except:
+                    pass
+            elif value == o:
+                found = o
+                break
+        
+        if found is None:
+            raise ValidatorCheckError("value %s not contains in options" % (value))
+        return found
 
 
 class List(DeclNode):
@@ -300,10 +312,29 @@ class Dict(DeclNode):
 
         if self._decl is not None and not isinstance(self._decl, dict):
             raise TypeError("decl must be dict, not %s" % type(self._decl))
-        
+
         self._min = min
         self._max = max
         self._required = required
+       
+
+        self._decl_prim_keys = {}
+        self._decl_node_key = None
+        
+        decl = self._decl
+        if decl is not None:
+            for k, v in decl.iteritems():
+                if isinstance(k, Node):
+                    if self._decl_node_key is not None:
+                        raise ValidatorNodeError("dict validation node key must declared once")
+
+                    accepted_types = (Pass, Boolean, Integer, Float, String, Option)
+                    if isinstance(k, accepted_types):
+                        self._decl_node_key = (k, v)
+                    else:
+                        raise ValidatorNodeError("dict validation node key must be one of following types: %s. %s" % (", ".join(map(str, accepted_types)), type(k)))
+                else:
+                    self._decl_prim_keys[k] = v
 
     def check(self, value):
         orig_value = value
@@ -320,11 +351,20 @@ class Dict(DeclNode):
             if vlen > mmax:
                 raise ValidatorCheckError("dict size %i greater than %i" % (vlen, mmax))
         
-        value = orig_value.copy()
-        if self._decl is not None:
-            for item_name, node in self._decl.iteritems():
-                if item_name in value:
-                    value[item_name] = node.check(value[item_name])
+        if self._decl is None:
+            value = orig_value.copy()
+        else:
+            # create new dict
+            value = {}
+            
+            decl_node_key = self._decl_node_key
+            for k, v in orig_value.iteritems():
+                if k in self._decl_prim_keys:
+                    value[k] = self._decl_prim_keys[k].check(v)
+                elif decl_node_key is not None:
+                    value[decl_node_key[0].check(k)] = decl_node_key[1].check(v)
+                else:
+                    value[k] = v
 
         if self._required:
             for item_name in self._required:

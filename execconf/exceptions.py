@@ -23,11 +23,19 @@ class CircularIncludeError(RuntimeError):
     pass
 
 
-class ValidatorConvertError(ValueError):
+class ValidatorConvertError(Exception):
     pass
 
 
-class ValidatorCheckError(ValueError):
+class ValidatorCheckError(Exception):
     pass
+
+
+class ValidatorNodeError(Exception):
+    pass
+
+
+
+
 
 

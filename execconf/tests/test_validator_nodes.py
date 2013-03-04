@@ -3,7 +3,8 @@ from execconf.validator.nodes import Boolean, Integer, Float, String, List, \
                                      ListBoolean, ListInteger, ListFloat, \
                                      ListString, ListDict, Dict, Option, \
                                      Pass
-from execconf.exceptions import ValidatorConvertError, ValidatorCheckError 
+from execconf.exceptions import ValidatorConvertError, ValidatorCheckError, \
+                                ValidatorNodeError
 
 
 class TestValidatorNodes(unittest.TestCase):
@@ -339,6 +340,23 @@ class TestValidatorNodes(unittest.TestCase):
             "bar": Boolean(),
             "baz": String()
         }, required=["foo"])
+        node7 = Dict({
+            "foo": String(),
+            String(): Boolean()
+        })
+        node8 = Dict({
+            Option("bar", "baz"): Float(),
+            "foo": Boolean()
+        })
+        with self.assertRaisesRegexp(ValidatorNodeError, "must declared once"):
+            Dict({
+                String(): Pass(),
+                Integer(): Pass()
+            })
+        with self.assertRaisesRegexp(ValidatorNodeError, "must be one of following types:"):
+            Dict({
+                List(): Pass()
+            })
         
         node1check = node1.check(some_dict)
         self.assertEqual(len(node1check), 3)
@@ -376,14 +394,47 @@ class TestValidatorNodes(unittest.TestCase):
         with self.assertRaisesRegexp(ValidatorCheckError, "required item 'foo' not found"):
             node6.check({"bar": False})
 
+        node7check = node7.check({
+            "foo": "bar",
+            "baz": "on"
+        })
+        self.assertEqual(node7check["foo"], "bar")
+        self.assertEqual(node7check["baz"], True)
+        with self.assertRaises(ValidatorConvertError):
+            node7.check({1: 2})
+
+        node8check = node8.check({
+            "foo": "off",
+            "bar": 1.2,
+            "baz": 3.4
+        })
+        self.assertEqual(node8check["foo"], False)
+        self.assertEqual(node8check["bar"], 1.2)
+        self.assertEqual(node8check["baz"], 3.4)
+        with self.assertRaises(ValidatorCheckError):
+            node8.check({"bad_key": 1})
+        with self.assertRaises(ValidatorConvertError):
+            node8.check({"bar": "bad_value"})
+
     def test_option(self):
         node1 = Option("foo", True, 1)
+        node2 = Option("foo", Boolean(), String(), 1, List())
 
         self.assertEqual(node1.check("foo"), "foo")
         self.assertEqual(node1.check(True), True)
         self.assertEqual(node1.check(1), 1)
         with self.assertRaisesRegexp(ValidatorCheckError, "not contains in options"):
             node1.check("bar")
+
+        self.assertEqual(node2.check("foo"), "foo")
+        self.assertEqual(node2.check("bar"), "bar")
+        self.assertEqual(node2.check(1), 1)
+        self.assertEqual(node2.check("on"), True)
+        self.assertEqual(node2.check(["baz"])[0], "baz")
+        with self.assertRaisesRegexp(ValidatorCheckError, "not contains in options"):
+            node2.check({})
+        with self.assertRaisesRegexp(ValidatorCheckError, "not contains in options"):
+            node2.check(None)
 
     def test_pass(self):
         node1 = Pass()
