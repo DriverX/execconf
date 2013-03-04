@@ -1,13 +1,18 @@
 import unittest
 
-def all_tests_suite():
-    suite = unittest.TestLoader().loadTestsFromNames([
+def all_tests_modules():
+    modules = [
             "execconf.tests.test_config",
             "execconf.tests.test_validator_nodes",
             "execconf.tests.test_validator",
             "execconf.tests.test_builder",
             "execconf.tests.test_loader"
-        ])
+        ]
+    return modules
+
+
+def all_tests_suite():
+    suite = unittest.TestLoader().loadTestsFromNames(all_tests_modules())
     return suite
 
 def main():
