@@ -164,6 +164,18 @@ class TestLoader(unittest.TestCase):
         self.assertEqual(conf.QUX[0], "World")
         self.assertEqual(conf.NEW, 1)
 
+    def test_filter_data(self):
+        loader1 = Loader(path.join(MODULE_ROOT, "data"))
+        conf1 = loader1.load("filter.py")
+
+        self.assertEqual(len(conf1), 2)
+        self.assertEqual(conf1.FILTER, True)
+        self.assertTrue("APPROVE_DICT" in conf1)
+
+
+
+
+
 
 
 

@@ -3,9 +3,9 @@ from ..exceptions import ValidatorConvertError, ValidatorCheckError, \
 
 
 __all__ = [
-    "Boolean", "Integer", "Float", "String", "List", "ListBoolean",
-    "ListInteger", "ListFloat", "ListString", "ListDict", "Dict",
-    "Option", "Pass", "LOADER_GLOBALS"
+    "Node", "DeclNode", "Boolean", "Integer", "Float", "String",
+    "List", "ListBoolean", "ListInteger", "ListFloat", "ListString",
+    "ListDict", "Dict", "Option", "Pass", "LOADER_GLOBALS"
 ]
 
 

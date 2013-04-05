@@ -3,7 +3,7 @@ from types import ModuleType
 import runpy
 from config import Config
 from validator import Validator
-from validator.nodes import Dict, LOADER_GLOBALS
+from validator.nodes import Node, Dict, LOADER_GLOBALS
 from builder import Builder
 from exceptions import AbsPathError, NotFoundError, \
                        NotFoundExtsError, UndeclaredExtError, \
@@ -68,11 +68,17 @@ class Loader(object):
     
     def _filter_data(self, data):
         ret = {}
+        approve_types = (
+                bool, int, float, long,
+                basestring, list, tuple,
+                set, frozenset, dict, type(None), Node)
         for k, v in data.iteritems():
-            if (k.startswith("__") and k.endswith("__") or \
-                    callable(v) or isinstance(v, ModuleType)):
+            if (k.startswith("_") or
+                    callable(v) or
+                    isinstance(v, ModuleType)):
                 continue
-            ret[k] = v
+            if isinstance(v, approve_types):
+                ret[k] = v
         return ret
 
     def _run_path(self, filepath, init_globals=None):
