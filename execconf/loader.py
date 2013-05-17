@@ -2,16 +2,17 @@ from os import path
 from types import ModuleType
 import runpy
 from config import Config
+from helpers import DummyHelper, IncludeHelper, MergeHelper, \
+                    MergeOptionHelper
 from validator import Validator
 from validator.nodes import Node, Dict, LOADER_GLOBALS
 from builder import Builder
 from exceptions import AbsPathError, NotFoundError, \
                        NotFoundExtsError, UndeclaredExtError, \
                        CircularIncludeError
-
+from pprint import pprint
 
 __all__ = ["Loader", "ConfigLoader", "ValidatorLoader"]
-
 
 class Loader(object):
     defaults_exts = ("py",)
@@ -28,43 +29,64 @@ class Loader(object):
             exts = self.defaults_exts
         self._exts = exts
 
+        self._dummy_helper = DummyHelper()
         self._defaults = defaults
         self._data = {}
-    
+        self._resolved_filepaths = {}
+        self._defaults_data = None
+
     def cleanup(self):
         self._data = {}
+
+    def append_data_mixin(self, extra):
+        self._data_mixins.append(extra)
 
     def joinpath(self, *args):
         return path.join(self._directory, *args)
 
-    def _resolve_filepath(self, filepath):
+    def _resolve_filepath(self, filepath, force=False):
         ret = None
-        filepath = path.normpath(filepath)
-        if path.isabs(filepath):
-            drive, tail = path.splitdrive(filepath)
-            if drive:
-                raise AbsPathError("absolute path with drive not allowed: %s" % filepath)
-            filepath = filepath[1:]
-        filename, ext = path.splitext(filepath)
-        if not ext:
-            found_filepath = None
-            for ext in self._exts:
-                ext = "." + ext
-                check_filepath = filepath + ext
-                if path.exists(self.joinpath(check_filepath)):
-                    found_filepath = check_filepath
-                    break
-            if found_filepath is None:
-                raise NotFoundExtsError("file %s not found with any declared extensions: %s" % (filepath, ", ".join(self._exts)))
-            filepath = found_filepath
-        elif ext[1:] not in self._exts:
-            raise UndeclaredExtError("file %s has undeclared extension %s" % (filepath, ext))
-        else:
-            if not path.exists(self.joinpath(filepath)):
-                raise NotFoundError("file %s not found in %s" % (filepath, self._directory))
+        if not force:
+            try:
+                resolved = self._resolved_filepaths[filepath]
+            except KeyError:
+                force = True
+            else:
+                ret = resolved
         
-        ret = filepath
+        if force:
+            orig_filepath = filepath
+            filepath = path.normpath(filepath)
+            if path.isabs(filepath):
+                drive, tail = path.splitdrive(filepath)
+                if drive:
+                    raise AbsPathError("absolute path with drive not allowed: %s" % filepath)
+                filepath = filepath[1:]
+            filename, ext = path.splitext(filepath)
+            if not ext:
+                found_filepath = None
+                for ext in self._exts:
+                    ext = "." + ext
+                    check_filepath = filepath + ext
+                    if path.exists(self.joinpath(check_filepath)):
+                        found_filepath = check_filepath
+                        break
+                if found_filepath is None:
+                    raise NotFoundExtsError("file %s not found with any declared extensions: %s" % (filepath, ", ".join(self._exts)))
+                filepath = found_filepath
+            elif ext[1:] not in self._exts:
+                raise UndeclaredExtError("file %s has undeclared extension %s" % (filepath, ext))
+            else:
+                if not path.exists(self.joinpath(filepath)):
+                    raise NotFoundError("file %s not found in %s" % (filepath, self._directory))
+            
+            # add to cache
+            self._resolved_filepaths[orig_filepath] = filepath
+            ret = filepath
         return ret
+    
+    def resolve_filepath(self, filepath):
+        return self._resolve_filepath(filepath)
     
     def _filter_data(self, data):
         ret = {}
@@ -100,7 +122,7 @@ class Loader(object):
                 data = self._filter_data(defaults)
 
             if data is not None:
-                self._extend_data(data)
+                self._defaults_data = data
             else:
                 raise TypeError("defaults options must be string of path to file or dict or some package: %s", type(defaults))
 
@@ -109,6 +131,7 @@ class Loader(object):
 
         filepath = self._resolve_filepath(filepath)
         data = self._run_path(filepath)
+        self._extend_data(self._defaults_data)
         self._extend_data(data)
         
         if extra is not None:
@@ -117,7 +140,8 @@ class Loader(object):
         return self._data
     
     def _extend_data(self, extra_data):
-        self._data.update(extra_data)
+        if extra_data:
+            self._data.update(extra_data)
         return self._data
 
     def load(self, filepath, extra=None):
@@ -132,6 +156,20 @@ class Loader(object):
 
 
 class ConfigLoader(Loader):
+    _helpers = {}
+
+    @staticmethod
+    def add_helper(helper):
+        ConfigLoader._helpers[helper.NAME] = helper
+
+    @staticmethod
+    def remove_helper(helper):
+        key = helper.NAME
+        try:
+            del ConfigLoader._helpers[key]
+        except KeyError:
+            pass
+
     def __init__(self, directory,
             exts=None,
             builder=None,
@@ -145,57 +183,149 @@ class ConfigLoader(Loader):
             raise TypeError("option builder must be istance of Builder")
         self._validator = validator
         self._builder = builder
+        
+        self._included = []
+        self._root_filepath = ":root:"
+        self._defaults_filepath = ":defaults:"
+        self._parent_filepath = self._root_filepath
+        
+        self._runpy_helpers = {}
+        self._create_runpy_helpers()
 
-        self._files_data = {}
-        self._files_queue = []
+        # alpha TODO
+        self._tree = None
+        self._tree_branches = {}
+        self._tree_queue_branch = None
+        self._create_tree_root()
     
     def cleanup(self):
         super(ConfigLoader, self).cleanup()
 
-        self._files_data = {}
-        self._files_queue = []
+        self._included = []
+        self._parent_filepath = self._root_filepath
+
+        self._tree_branches = {}
+        self._tree_queue_branch = None
+        self._create_tree_root()
 
         if self._validator:
             self._validator.cleanup()
         if self._builder:
             self._builder.cleanup()
+    
+    def _get_tree_branch(self, filepath):
+        try:
+            return self._tree_branches[filepath]
+        except KeyError:
+            pass
+        ret = [filepath, [], None, None]
+        self._tree_branches[filepath] = ret
+        return ret
+    
+    def _create_tree_root(self):
+        self._tree = [self._get_tree_branch(self._root_filepath),
+                      self._dummy_helper, [], {}]
 
-    def _get_include_def(self, root_filepath, included):
-        root_dirname = path.dirname(root_filepath)
+    def _has_tree_branch(self, filepath):
+        return filepath in self._tree_branches
 
-        def include(filepath):
-            filepath = self._resolve_filepath(path.join(root_dirname, filepath))
-            self._handle(filepath, _included=included)
+    @property
+    def parent_filepath(self):
+        return self._parent_filepath
+    
+    def parent_join(self, filepath):
+        return path.join(path.dirname(self._parent_filepath), filepath)
 
-        return include
+    def _get_runpy_helper_wrap(self, h):
+        def wrap(*args, **kwargs):
+            return h.caller(self, *args, **kwargs)
+        return wrap
 
-    def _handle(self, filepath, _included=None):
-        if _included is None:
-            _included = []
+    def _create_runpy_helpers(self):
+        for n, h in self._helpers.iteritems():
+            hi = h()
+            self._runpy_helpers[n] = self._get_runpy_helper_wrap(hi)
+
+    def _handle(self, filepath, helper=None,
+            helper_args=None, helper_kwargs=None):
+        _included = self._included
         if filepath in _included:
             raise CircularIncludeError("%s already included: %s" % (filepath, "->".join(_included)))
         
-        self._files_queue.append(filepath)
+        if not helper:
+            helper = self._dummy_helper
+        if not helper_args:
+            helper_args = []
+        if not helper_kwargs:
+            helper_kwargs = {}
+     
+        parent_filepath = self._parent_filepath
+        
+        branch = self._get_tree_branch(filepath)
+        queue_data = [branch, helper, helper_args, helper_kwargs]
+        if not self._tree_queue_branch:
+            if not self._tree:
+                self._tree = [self._get_tree_branch(self._parent_filepath),
+                              self._dummy_helper, [], {}]
+            queue_branch = self._tree
+        else:
+            queue_branch = self._tree_queue_branch
+        queue_branch[0][1].append(queue_data)
 
-        if filepath not in self._files_data:
+        if branch[2] is None:
             # append filepath for check cycling include
             _included.append(filepath)
 
-            include_def = self._get_include_def(filepath, _included)
-            data = self._run_path(filepath, {"include": include_def})
+            # safe previously parent_filepath
+            prev_parent_filepath = self._parent_filepath
+            self._parent_filepath = filepath
+
+            prev_queue_branch = self._tree_queue_branch
+            self._tree_queue_branch = queue_data
+
+            # eval python file with helpers
+            data = self._run_path(filepath, self._runpy_helpers)
             
-            # remove filepath
+            # return previously parent_filepath
+            self._parent_filepath = prev_parent_filepath
+            self._tree_queue_branch = prev_queue_branch
+
+            # remove filepath in circular check
             _included.remove(filepath)
             
             # add data
-            self._files_data[filepath] = data
+            branch[2] = data
+
+    def handle(self, filepath, *args, **kwargs):
+        filepath = self._resolve_filepath(filepath)
+        return self._handle(filepath, *args, **kwargs)
     
+    def _iter_tree(self, _iner=None):
+        branch = _iner or self._tree
+        for b in branch[0][1]:
+            for bi in self._iter_tree(_iner=b):
+                yield bi
+            yield branch, b
+
     def _collect_result_data(self):
-        for f in self._files_queue:
-            data = self._files_data[f]
-            if data:
-                self._extend_data(data)
+        data = {}
+        for p, c in self._iter_tree():
+            pdata = p[0][3] or p[0][2]
+            cdata = c[0][3] or c[0][2] or {}
+            if not pdata:
+                data = cdata.copy()
+            else:
+                data = c[1].merge(pdata, cdata, *c[2], **c[3])
+            p[0][3] = data
+        self._data = data
     
+    def _load_defaults(self):
+        super(ConfigLoader, self)._load_defaults()
+
+        branch = self._get_tree_branch(self._defaults_filepath)
+        branch[2] = self._defaults_data
+        self._tree[0][1].insert(0, [branch, self._dummy_helper, [], {}])
+
     def _load(self, filepath, extra=None):
         self._load_defaults()
 
@@ -250,5 +380,11 @@ class ValidatorLoader(Loader):
 
         validator = Validator(AVT, only_declared=only_declared)
         return validator
+
+
+ConfigLoader.add_helper(IncludeHelper)
+# ConfigLoader.add_helper(MergeHelper)
+# ConfigLoader.add_helper(MergeOptionHelper)
+
 
 

@@ -1,5 +1,7 @@
 import copy
 
+__all__ = ["frozendict", "make_hashable"]
+
 class frozendict(dict):
     def _blocked_attribute(obj):
         raise AttributeError, "A frozendict cannot be modified."
@@ -45,4 +47,14 @@ class frozendict(dict):
 
     def __repr__(self):
         return "frozendict(%s)" % dict.__repr__(self)
+
+def make_hashable(obj):
+    if isinstance(obj, (list, tuple)):
+        return tuple(make_hashable(sub) for sub in obj)
+    if isinstance(obj, set):
+        return frozenset(obj)
+    if isinstance(obj, dict):
+        return tuple(make_hashable(i) for i in obj.iteritems())
+    return obj
+
 

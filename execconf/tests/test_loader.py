@@ -172,6 +172,19 @@ class TestLoader(unittest.TestCase):
         self.assertEqual(conf1.FILTER, True)
         self.assertTrue("APPROVE_DICT" in conf1)
 
+    def test_load_merge(self):
+        loader1 = Loader(path.join(MODULE_ROOT, "data"))
+        conf1 = loader1.load("merge")
+
+        self.assertEqual(len(conf1), 7)
+    
+    def test_load_merge_option(self):
+        loader1 = Loader(path.join(MODULE_ROOT, "data"))
+        conf1 = loader1.load("merge_option")
+
+        self.assertEqual(len(conf1), 7)
+
+
 
 
 
