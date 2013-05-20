@@ -1,0 +1,13 @@
+COMPLEX_INCLUDE = True
+
+FOO = 11
+BAR = 22
+
+MERGE_INCLUDE = {
+    "BAR": 22
+}
+
+MERGE_OPTION1 = {
+    "FOO": "BAR"
+}
+

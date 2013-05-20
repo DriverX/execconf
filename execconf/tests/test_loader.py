@@ -209,7 +209,7 @@ class TestLoader(unittest.TestCase):
         loader1 = Loader(path.join(MODULE_ROOT, "data"))
         conf1 = loader1.load("merge_option")
 
-        self.assertEqual(len(conf1), 7)
+        self.assertEqual(len(conf1), 8)
         self.assertTrue(conf1.MERGE)
         
         self.assertEqual(len(conf1.OPT1), 4)
@@ -240,6 +240,41 @@ class TestLoader(unittest.TestCase):
         self.assertEqual(conf1.OPT5, "FOO")
         
         self.assertEqual(conf1.OPT6, 12321)
+        
+        self.assertEqual(conf1.OPT7, True)
+        self.assertTrue("OPT8" not in conf1)
+
+    def test_complex_helpers(self):
+        loader1 = Loader(path.join(MODULE_ROOT, "data"))
+        conf1 = loader1.load("complex_helpers")
+
+        self.assertEqual(len(conf1), 10)
+        self.assertTrue(conf1.COMPLEX)
+        self.assertTrue(conf1.COMPLEX_INCLUDE)
+        self.assertTrue(conf1.COMPLEX_MERGE)
+        self.assertTrue(conf1.COMPLEX_MERGE_OPTION)
+
+        self.assertEqual(conf1.FOO, 111)
+        self.assertEqual(conf1.BAR, 22)
+        self.assertEqual(conf1.BAZ, 333)
+
+        self.assertEqual(len(conf1.MERGE_INCLUDE), 3)
+        self.assertTrue("FOO" not in conf1.MERGE_INCLUDE)
+        self.assertEqual(conf1.MERGE_INCLUDE["BAR"], 22)
+        self.assertEqual(conf1.MERGE_INCLUDE["BAZ"], 333)
+        self.assertEqual(conf1.MERGE_INCLUDE["QUX"], 4444)
+
+        self.assertEqual(len(conf1.MERGE_OPTION1), 2)
+        self.assertEqual(conf1.MERGE_OPTION1["FOO"], "BAR")
+        self.assertEqual(conf1.MERGE_OPTION1["BAZ"], "QUX")
+        
+        self.assertEqual(len(conf1.MERGE_OPTION2), 2)
+        self.assertEqual(conf1.MERGE_OPTION2["FOO"], "BAR")
+        self.assertTrue("QUX" not in conf1.MERGE_OPTION2["BAZ"])
+        self.assertTrue(conf1.MERGE_OPTION2["BAZ"]["QUXX"])
+
+
+
 
         
 

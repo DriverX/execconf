@@ -40,9 +40,13 @@ OPT4 = {
 
 OPT5 = "FOO"
 
+OPT7 = True
+
 merge_option("merge_option-merging", ["MERGE", "OPT1"])
 merge_option("merge_option-merging", "OPT2", depth=1)
 merge_option("merge_option-merging", "OPT3", depth=3)
 merge_option("merge_option-merging2", "OPT4")
 merge_option("merge_option-merging2", "OPT6")
+merge_option("merge_option-merging2", "OPT7")
+merge_option("merge_option-merging2", "OPT8")
 
