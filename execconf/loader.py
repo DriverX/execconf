@@ -144,10 +144,10 @@ class Loader(object):
         return self._data
 
     def load(self, filepath, extra=None):
-        self.cleanup()
-
         data = self._load(filepath, extra=extra)
         conf = self.convert(data)
+        
+        self.cleanup()
         return conf
 
     def convert(self, data):
