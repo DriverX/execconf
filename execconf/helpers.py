@@ -31,10 +31,6 @@ class IncludeHelper(DummyHelper):
     NAME = "include"
     
     def caller(self, loader, filepath):
-        # print "=== PARENT FILEPATH ==="
-        # print hash(self), loader.parent_filepath
-        # print "======================="
-
         filepath = loader.parent_join(filepath)
         loader.handle(filepath, helper=self)
 

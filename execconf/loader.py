@@ -10,7 +10,6 @@ from builder import Builder
 from exceptions import AbsPathError, NotFoundError, \
                        NotFoundExtsError, UndeclaredExtError, \
                        CircularIncludeError
-from pprint import pprint
 
 __all__ = ["Loader", "ConfigLoader", "ValidatorLoader"]
 
