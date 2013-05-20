@@ -1,4 +1,6 @@
 from os import path
+from copy import deepcopy
+from utils import deep_merge
 
 __all__ = []
 
@@ -19,10 +21,9 @@ class DummyHelper(BaseHelper):
     NAME = "dummy"
     
     def merge(self, left, right, *args, **kwargs):
-        data = left
+        data = deepcopy(left)
         if right:
-            data = left.copy()
-            data.update(right)
+            data.update(deepcopy(right))
         return data
 
 
@@ -45,18 +46,31 @@ class MergeHelper(BaseHelper):
         loader.handle(filepath, helper=self)
 
     def merge(self, left, right):
-        return left
+        return deep_merge(left, right)
 
 
 class MergeOptionHelper(BaseHelper):
     NAME = "merge_option"
     
-    def caller(self, loader, filepath, options, deep=-1):
+    def caller(self, loader, filepath, *args, **kwargs):
         loader.handle(filepath, helper=self,
-                helper_args=[options], helper_kwargs={"deep": deep})
+                helper_args=args, helper_kwargs=kwargs)
 
-    def merge(self, left, right, options, deep=-1):
-        return left
+    def merge(self, left, right, options, depth=-1):
+        if not isinstance(options, (list, tuple)):
+            options = set([options])
+        else:
+            options = set(options)
+
+        result = deepcopy(left)
+        for o in options:
+            if o in right:
+                if depth == 0:
+                    result[o] = deepcopy(right[o])
+                else:
+                    depth -= 1
+                    result[o] = deep_merge(result.get(o), right[o], depth=depth)
+        return result 
 
 
 

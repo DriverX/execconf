@@ -3,7 +3,9 @@ MERGE = True
 OPT1 = {
     "BAR": {
         "BAZZ": 22
-    }
+    },
+    "BAZ": True,
+    "QUX": 33
 }
 
 OPT2 = {

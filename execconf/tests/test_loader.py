@@ -177,12 +177,71 @@ class TestLoader(unittest.TestCase):
         conf1 = loader1.load("merge")
 
         self.assertEqual(len(conf1), 7)
+        self.assertTrue(conf1.MERGE)
+        
+        self.assertEqual(len(conf1.OPT1), 3)
+        self.assertEqual(conf1.OPT1["FOO"], 1)
+        self.assertEqual(conf1.OPT1["BAR"], 22)
+        self.assertEqual(conf1.OPT1["BAZ"], 33)
+        
+        self.assertEqual(len(conf1.OPT2), 2)
+        self.assertEqual(conf1.OPT2[0], 11)
+        
+        self.assertEqual(len(conf1.OPT3), 4)
+        self.assertEqual(len(conf1.OPT3["FOO"]), 2)
+        self.assertEqual(conf1.OPT3["FOO"]["BAR"], 1)
+        self.assertEqual(conf1.OPT3["FOO"]["BARR"], 2)
+        self.assertTrue(isinstance(conf1.OPT3["BAZ"], tuple))
+        self.assertEqual(len(conf1.OPT3["BAZ"]), 1)
+        self.assertTrue(conf1.OPT3["SOME1"])
+        self.assertTrue(conf1.OPT3["SOME2"])
+        
+        self.assertEqual(len(conf1.OPT4), 4)
+        self.assertEqual(conf1.OPT4["FOO"], 1)
+        self.assertEqual(conf1.OPT4["BAR"], 22)
+        
+        self.assertTrue(isinstance(conf1.OPT5, dict))
+        self.assertEqual(len(conf1.OPT5), 1)
+        
+        self.assertEqual(conf1.OPT6, "FOO")
     
     def test_load_merge_option(self):
         loader1 = Loader(path.join(MODULE_ROOT, "data"))
         conf1 = loader1.load("merge_option")
 
         self.assertEqual(len(conf1), 7)
+        self.assertTrue(conf1.MERGE)
+        
+        self.assertEqual(len(conf1.OPT1), 4)
+        self.assertEqual(len(conf1.OPT1["BAR"]), 2)
+        self.assertEqual(conf1.OPT1["BAR"]["BAZ"], 2)
+        self.assertEqual(conf1.OPT1["BAR"]["BAZZ"], 22)
+        self.assertEqual(conf1.OPT1["QUX"], 33)
+        
+        self.assertTrue("LVL1_KEY1" in conf1.OPT2)
+        self.assertTrue("LVL1_KEY2" in conf1.OPT2)
+        self.assertTrue("LVL2_KEY1" not in conf1.OPT2["LVL1"])
+        self.assertTrue("LVL2_KEY2" in conf1.OPT2["LVL1"])
+        
+        self.assertTrue("LVL1_KEY1" in conf1.OPT3)
+        self.assertTrue("LVL1_KEY2" in conf1.OPT3)
+        self.assertTrue("LVL2_KEY1" in conf1.OPT3["LVL1"])
+        self.assertTrue("LVL2_KEY2" in conf1.OPT3["LVL1"])
+        self.assertTrue("LVL3_KEY1" in conf1.OPT3["LVL1"]["LVL2"])
+        self.assertTrue("LVL3_KEY2" in conf1.OPT3["LVL1"]["LVL2"])
+        self.assertTrue("LVL4_KEY1" not in conf1.OPT3["LVL1"]["LVL2"]["LVL3"])
+        self.assertTrue("LVL4_KEY2" in conf1.OPT3["LVL1"]["LVL2"]["LVL3"])
+        
+        self.assertEqual(len(conf1.OPT4), 2)
+        self.assertTrue("FOO" in conf1.OPT4)
+        self.assertTrue("BAR" in conf1.OPT4)
+        self.assertEqual(conf1.OPT4["BAR"], 222)
+        
+        self.assertEqual(conf1.OPT5, "FOO")
+        
+        self.assertEqual(conf1.OPT6, 12321)
+
+        
 
 
 

@@ -310,8 +310,15 @@ class ConfigLoader(Loader):
     def _collect_result_data(self):
         data = {}
         for p, c in self._iter_tree():
-            pdata = p[0][3] or p[0][2]
-            cdata = c[0][3] or c[0][2] or {}
+            pdata = p[0][3]
+            if pdata is None:
+                pdata = p[0][2]
+
+            cdata = c[0][3]
+            if cdata is None:
+                cdata = c[0][2]
+                if cdata is None:
+                    cdata = {}
             if not pdata:
                 data = cdata.copy()
             else:
@@ -383,8 +390,8 @@ class ValidatorLoader(Loader):
 
 
 ConfigLoader.add_helper(IncludeHelper)
-# ConfigLoader.add_helper(MergeHelper)
-# ConfigLoader.add_helper(MergeOptionHelper)
+ConfigLoader.add_helper(MergeHelper)
+ConfigLoader.add_helper(MergeOptionHelper)
 
 
 
