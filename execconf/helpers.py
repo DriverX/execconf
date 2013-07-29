@@ -2,7 +2,8 @@ from os import path
 from copy import deepcopy
 from utils import deep_merge
 
-__all__ = []
+__all__ = ["DummyHelper", "IncludeHelper", "MergeHelper",
+           "MergeOptionHelper"]
 
 class BaseHelper(object):
     NAME = None

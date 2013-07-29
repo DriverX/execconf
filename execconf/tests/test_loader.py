@@ -2,10 +2,19 @@ import unittest
 import sys
 import os
 from os import path
-from execconf import ConfigLoader as Loader, ValidatorLoader, Validator, Builder
-from execconf.exceptions import AbsPathError, NotFoundError, \
-                                NotFoundExtsError, UndeclaredExtError, \
-                                CircularIncludeError
+from StringIO import StringIO
+import json
+try:
+    import yaml
+except ImportError:
+    yaml = None
+import pickle
+from execconf import (ConfigLoader as Loader, ValidatorLoader,
+                      Validator, Builder)
+from execconf.exceptions import (AbsPathError, NotFoundError,
+                                 NotFoundExtsError, UndeclaredExtError,
+                                 CircularIncludeError, UnknownFormatterError)
+from execconf.formatters import YAMLFormatter
 import data_defaults
 
 MODULE_ROOT = path.dirname(path.abspath(__file__))
@@ -273,16 +282,43 @@ class TestLoader(unittest.TestCase):
         self.assertTrue("QUX" not in conf1.MERGE_OPTION2["BAZ"])
         self.assertTrue(conf1.MERGE_OPTION2["BAZ"]["QUXX"])
 
+    def test_load_file(self):
+        loader1 = Loader(path.join(MODULE_ROOT, "data"))
 
+        f = StringIO("FILE=True\ninclude('base2')")
+        conf1 = loader1.load(f)
+        f.close()
 
+        self.assertEqual(len(conf1), 3)
+        self.assertEqual(conf1.FOO, "BAZ")
+        self.assertTrue(conf1.BASE2)
+        self.assertTrue(conf1.FILE)
 
+    def test_formatters(self):
+        loader1 = Loader(path.join(MODULE_ROOT, "data"), formatter="json")
+        conf1 = loader1.load("base2")
         
+        if yaml:
+            loader2 = Loader(path.join(MODULE_ROOT, "data"), formatter="yaml")
+            conf2 = loader2.load("base2")
+        else:
+            with self.assertRaises(UnknownFormatterError):
+                Loader(path.join(MODULE_ROOT, "data"), formatter="yaml")
+            
+            loader2 = Loader(path.join(MODULE_ROOT, "data"), 
+                             formatter=YAMLFormatter())
+            with self.assertRaises(NotImplementedError):
+                loader2.load("base2")
 
-
-
-
-
-
-
+        loader3 = Loader(path.join(MODULE_ROOT, "data"), formatter="pickle")
+        conf3 = loader3.load("base2")
+        
+        with self.assertRaises(UnknownFormatterError):
+            Loader(path.join(MODULE_ROOT, "data"), formatter="foobar")
+        
+        self.assertTrue(json.loads(conf1)["BASE2"])
+        if yaml:
+            self.assertTrue(yaml.load(conf2)["BASE2"])
+        self.assertTrue(pickle.loads(conf3)["BASE2"])
 
 

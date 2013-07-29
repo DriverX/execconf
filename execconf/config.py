@@ -1,5 +1,6 @@
 from utils import frozendict
 
+__all__ = ["Config"]
 
 class Config(frozendict):
     def __init__(self, *args, **kwargs):

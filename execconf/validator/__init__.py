@@ -1,5 +1,6 @@
 from nodes import Node
 
+__all__ = ["Validator"]
 
 class Validator(object):
     def __init__(self, AVT, only_declared=False):

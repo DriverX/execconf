@@ -1,15 +1,21 @@
+from __future__ import absolute_import
+import os
 from os import path
 from types import ModuleType
 import runpy
-from config import Config
-from helpers import DummyHelper, IncludeHelper, MergeHelper, \
-                    MergeOptionHelper
-from validator import Validator
-from validator.nodes import Node, Dict, LOADER_GLOBALS
-from builder import Builder
-from exceptions import AbsPathError, NotFoundError, \
-                       NotFoundExtsError, UndeclaredExtError, \
-                       CircularIncludeError
+from tempfile import NamedTemporaryFile
+from .config import Config
+from .helpers import (DummyHelper, IncludeHelper, MergeHelper,
+                     MergeOptionHelper)
+from .validator import Validator
+from .validator.nodes import Node, Dict, LOADER_GLOBALS
+from .builder import Builder
+from .formatters import (has_yaml, JSONFormatter,
+                         YAMLFormatter, PickleFormatter)
+from .exceptions import (AbsPathError, NotFoundError,
+                        NotFoundExtsError, UndeclaredExtError,
+                        FileHandleError, CircularIncludeError,
+                        UnknownFormatterError)
 
 __all__ = ["Loader", "ConfigLoader", "ValidatorLoader"]
 
@@ -144,7 +150,25 @@ class Loader(object):
         return self._data
 
     def load(self, filepath, extra=None):
+        f = None
+        if not isinstance(filepath, basestring):
+            f = NamedTemporaryFile(mode="w",
+                                   prefix="excc_",
+                                   suffix=(".%s" % self._exts[0]),
+                                   dir=self._directory,
+                                   delete=False)
+            for line in filepath.readlines():
+                f.write(line)
+            f.close()
+            filepath = path.basename(f.name)
+        
+        # handler root filepath
         data = self._load(filepath, extra=extra)
+
+        if f:
+            os.remove(f.name)
+        
+        # convert to result config data structure
         conf = self.convert(data)
         
         self.cleanup()
@@ -156,6 +180,10 @@ class Loader(object):
 
 class ConfigLoader(Loader):
     _helpers = {}
+    _formatters = {"json": JSONFormatter(),
+                   "pickle": PickleFormatter()}
+    if has_yaml():
+        _formatters["yaml"] = YAMLFormatter()
 
     @staticmethod
     def add_helper(helper):
@@ -173,6 +201,7 @@ class ConfigLoader(Loader):
             exts=None,
             builder=None,
             validator=None,
+            formatter=None,
             **kwargs):
         super(ConfigLoader, self).__init__(directory, exts=exts, **kwargs)
 
@@ -182,6 +211,13 @@ class ConfigLoader(Loader):
             raise TypeError("option builder must be istance of Builder")
         self._validator = validator
         self._builder = builder
+
+        if isinstance(formatter, basestring):
+            try:
+                formatter = self._formatters[formatter]
+            except KeyError:
+                raise UnknownFormatterError("unknown formatter name %s" % formatter) 
+        self._formatter = formatter
         
         self._included = []
         self._root_filepath = ":root:"
@@ -248,6 +284,7 @@ class ConfigLoader(Loader):
     def _handle(self, filepath, helper=None,
             helper_args=None, helper_kwargs=None):
         _included = self._included
+        
         if filepath in _included:
             raise CircularIncludeError("%s already included: %s" % (filepath, "->".join(_included)))
         
@@ -357,6 +394,8 @@ class ConfigLoader(Loader):
         return data
 
     def convert(self, data):
+        if self._formatter:
+            return self._formatter.format(data)
         return Config(data)
 
 
@@ -388,9 +427,9 @@ class ValidatorLoader(Loader):
         return validator
 
 
+# Built-in helpers
 ConfigLoader.add_helper(IncludeHelper)
 ConfigLoader.add_helper(MergeHelper)
 ConfigLoader.add_helper(MergeOptionHelper)
-
 
 

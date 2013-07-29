@@ -1,41 +1,49 @@
-__all__ = ["AbsPathError", "NotFoundError", "NotFoundExtsError",
-           "UndeclaredExtError", "CircularIncludeError",
+__all__ = ["Error", "AbsPathError", "NotFoundError",
+           "NotFoundExtsError", "UndeclaredExtError",
+           "CircularIncludeError", "UnknownFormatterError",
            "ValidatorConvertError", "ValidatorCheckError"]
 
-
-class AbsPathError(IOError):
+class Error(Exception):
     pass
 
 
-class NotFoundError(IOError):
+class AbsPathError(Error):
     pass
 
 
-class NotFoundExtsError(IOError):
+class NotFoundError(Error):
     pass
 
 
-class UndeclaredExtError(ValueError):
+class NotFoundExtsError(Error):
     pass
 
 
-class CircularIncludeError(RuntimeError):
+class UndeclaredExtError(Error):
     pass
 
 
-class ValidatorConvertError(Exception):
+class FileHandleError(Error):
     pass
 
 
-class ValidatorCheckError(Exception):
+class CircularIncludeError(FileHandleError):
     pass
 
 
-class ValidatorNodeError(Exception):
+class UnknownFormatterError(Error):
     pass
 
 
+class ValidatorConvertError(Error):
+    pass
 
 
+class ValidatorCheckError(Error):
+    pass
+
+
+class ValidatorNodeError(Error):
+    pass
 
 

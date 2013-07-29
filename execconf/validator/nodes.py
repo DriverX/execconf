@@ -1,13 +1,9 @@
 from ..exceptions import ValidatorConvertError, ValidatorCheckError, \
                          ValidatorNodeError
 
-
-__all__ = [
-    "Node", "DeclNode", "Boolean", "Integer", "Float", "String",
-    "List", "ListBoolean", "ListInteger", "ListFloat", "ListString",
-    "ListDict", "Dict", "Option", "Pass", "LOADER_GLOBALS"
-]
-
+__all__ = ["Node", "DeclNode", "Boolean", "Integer", "Float", "String",
+           "List", "ListBoolean", "ListInteger", "ListFloat", "ListString",
+           "ListDict", "Dict", "Option", "Pass", "LOADER_GLOBALS"]
 
 _ConvertErrorDummyMsg = "%s: value '%s' can't convert: %s"
 
