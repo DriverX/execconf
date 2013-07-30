@@ -19,7 +19,6 @@ import data_defaults
 
 MODULE_ROOT = path.dirname(path.abspath(__file__))
 
-
 class TestLoader(unittest.TestCase):
     def test_load(self):
         loader1 = Loader(path.join(MODULE_ROOT, "data"))

@@ -6,16 +6,16 @@ import runpy
 from tempfile import NamedTemporaryFile
 from .config import Config
 from .helpers import (DummyHelper, IncludeHelper, MergeHelper,
-                     MergeOptionHelper)
+                      MergeOptionHelper)
 from .validator import Validator
 from .validator.nodes import Node, Dict, LOADER_GLOBALS
 from .builder import Builder
 from .formatters import (has_yaml, JSONFormatter,
                          YAMLFormatter, PickleFormatter)
 from .exceptions import (AbsPathError, NotFoundError,
-                        NotFoundExtsError, UndeclaredExtError,
-                        FileHandleError, CircularIncludeError,
-                        UnknownFormatterError)
+                         NotFoundExtsError, UndeclaredExtError,
+                         FileHandleError, CircularIncludeError,
+                         UnknownFormatterError)
 
 __all__ = ["Loader", "ConfigLoader", "ValidatorLoader"]
 
@@ -162,12 +162,13 @@ class Loader(object):
             f.close()
             filepath = path.basename(f.name)
         
-        # handler root filepath
-        data = self._load(filepath, extra=extra)
+        try:
+            # handler root filepath
+            data = self._load(filepath, extra=extra)
+        finally:
+            if f:
+                os.remove(f.name)
 
-        if f:
-            os.remove(f.name)
-        
         # convert to result config data structure
         conf = self.convert(data)
         
