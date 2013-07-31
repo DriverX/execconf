@@ -48,8 +48,8 @@ Ex: $ echo 'FOO=True' | execconf -i /some/dir""")
                         nargs="+",
                         default="py",
                         help="extension check for input file and inner helpers")
-    # FIXME
-    from pprint import pprint
+    
+    # parse sys.argv
     args = parser.parse_args()
     
     # filepath
