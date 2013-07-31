@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from os import path, walk
-from distutils.core import setup
+from setuptools import setup
 from execconf import __version__
 
 MODULE_ROOT = path.dirname(path.abspath(__file__))
@@ -16,7 +16,6 @@ def get_tests_data():
             data.append(path.join(data_dir, _f))
     return data
 
-
 setup(name="execconf",
       version=".".join(map(str, __version__)),
       description="Executable config on pure python",
@@ -29,6 +28,7 @@ setup(name="execconf",
                 "execconf.validator"],
       package_data={"execconf.tests": get_tests_data()},
       scripts=["bin/execconf"],
+      test_suite="execconf.tests.all_tests_suite",
       classifiers=["License :: OSI Approved :: MIT License",
                    "Programming Language :: Python",
                    "Programming Language :: Python :: 2.7",
