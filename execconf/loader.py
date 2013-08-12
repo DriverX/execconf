@@ -10,8 +10,7 @@ from .helpers import (DummyHelper, IncludeHelper, MergeHelper,
 from .validator import Validator
 from .validator.nodes import Node, Dict, LOADER_GLOBALS
 from .builder import Builder
-from .formatters import (has_yaml, JSONFormatter,
-                         YAMLFormatter, PickleFormatter)
+from .formatters import type2cls
 from .exceptions import (AbsPathError, NotFoundError,
                          NotFoundExtsError, UndeclaredExtError,
                          FileHandleError, CircularIncludeError,
@@ -181,10 +180,6 @@ class Loader(object):
 
 class ConfigLoader(Loader):
     _helpers = {}
-    _formatters = {"json": JSONFormatter(),
-                   "pickle": PickleFormatter()}
-    if has_yaml():
-        _formatters["yaml"] = YAMLFormatter()
 
     @staticmethod
     def add_helper(helper):
@@ -215,9 +210,12 @@ class ConfigLoader(Loader):
 
         if isinstance(formatter, basestring):
             try:
-                formatter = self._formatters[formatter]
+                formatter = type2cls[formatter]
             except KeyError:
-                raise UnknownFormatterError("unknown formatter name %s" % formatter) 
+                raise UnknownFormatterError("unknown formatter name %s" % formatter)
+            else:
+                formatter = formatter()
+
         self._formatter = formatter
         
         self._included = []

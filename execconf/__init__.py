@@ -8,8 +8,9 @@ from .config import Config
 from .validator import Validator
 from .builder import Builder
 from .loader import Loader, ConfigLoader, ValidatorLoader
+from .formatters import type2cls
 
-__version__ = (0, 3, 1)
+__version__ = (0, 3, 2)
 
 __all__ = ["Config", "Validator", "Builder", "Loader", "ConfigLoader",
            "ValidatorLoader"]
@@ -38,8 +39,14 @@ def main():
                         help="write result to output file. If not set, result write to stdout")
     parser.add_argument("-t", "--type",
                         default="json",
-                        choices=("json", "yaml", "pickle"),
+                        choices=type2cls.keys(),
                         help="format output data")
+    parser.add_argument("--yaml-canonical",
+                        action="store_true",
+                        help="use canonical YAML format")
+    parser.add_argument("--json-ugly",
+                        action="store_false",
+                        help="not use pretty print JSON formation")
     parser.add_argument("--root-dir",
                         type=path_type,
                         help="""use this if set data in stdin.
@@ -69,6 +76,14 @@ Ex: $ echo 'FOO=True' | execconf -i /some/dir""")
     
     # formatter
     formatter = args.type
+    formatter_kw = {}
+    if formatter == "yaml":
+        if args.yaml_canonical:
+            formatter_kw["canonical"] = True
+    elif formatter == "json":
+        if not args.json_ugly:
+            formatter_kw["pretty_print"] = False
+    formatter_instance = type2cls[formatter](**formatter_kw)
 
     # override directory
     root_dir = args.root_dir
@@ -96,7 +111,9 @@ Ex: $ echo 'FOO=True' | execconf -i /some/dir""")
     exts = args.extension
     
     try:
-        loader = ConfigLoader(directory, exts=exts, formatter=formatter)
+        loader = ConfigLoader(directory,
+                              exts=exts,
+                              formatter=formatter_instance)
         result = loader.load(filepath)
     except:
         raise
