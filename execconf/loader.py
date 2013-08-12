@@ -22,7 +22,7 @@ class Loader(object):
     defaults_exts = ("py",)
 
     def __init__(self, directory, exts=None, defaults=None):
-        self._directory = path.abspath(directory)
+        self.directory = path.abspath(directory)
 
         if exts is not None:
             if isinstance(exts, basestring):
@@ -46,7 +46,33 @@ class Loader(object):
         self._data_mixins.append(extra)
 
     def joinpath(self, *args):
-        return path.join(self._directory, *args)
+        return path.join(self.directory, *args)
+    
+    def _resolve_filepath_ext(self, filepath, directory=None):
+        if directory is None:
+            directory = self.directory
+
+        filename, ext = path.splitext(filepath)
+
+        if not ext:
+            found_filepath = None
+            for _ext in self._exts:
+                check_filepath = "%s.%s" % (filepath, _ext)
+                if path.exists(path.join(directory, check_filepath)):
+                    found_filepath = check_filepath
+                    break
+            if found_filepath is None:
+                raise NotFoundExtsError("file %s not found in %s with any declared extensions: %s" % (filepath, directory, ", ".join(self._exts)))
+
+            # set new filepath
+            filepath = found_filepath
+        elif ext[1:] not in self._exts:
+            raise UndeclaredExtError("file %s has undeclared extension %s" % (filepath, ext))
+        else:
+            if not path.exists(path.join(directory, filepath)):
+                raise NotFoundError("file %s not found in %s" % (filepath, directory))
+
+        return filepath
 
     def _resolve_filepath(self, filepath, force=False):
         ret = None
@@ -66,23 +92,9 @@ class Loader(object):
                 if drive:
                     raise AbsPathError("absolute path with drive not allowed: %s" % filepath)
                 filepath = filepath[1:]
-            filename, ext = path.splitext(filepath)
-            if not ext:
-                found_filepath = None
-                for ext in self._exts:
-                    ext = "." + ext
-                    check_filepath = filepath + ext
-                    if path.exists(self.joinpath(check_filepath)):
-                        found_filepath = check_filepath
-                        break
-                if found_filepath is None:
-                    raise NotFoundExtsError("file %s not found with any declared extensions: %s" % (filepath, ", ".join(self._exts)))
-                filepath = found_filepath
-            elif ext[1:] not in self._exts:
-                raise UndeclaredExtError("file %s has undeclared extension %s" % (filepath, ext))
-            else:
-                if not path.exists(self.joinpath(filepath)):
-                    raise NotFoundError("file %s not found in %s" % (filepath, self._directory))
+
+            # resolve extension
+            filepath = self._resolve_filepath_ext(filepath)
             
             # add to cache
             self._resolved_filepaths[orig_filepath] = filepath
@@ -107,8 +119,10 @@ class Loader(object):
                 ret[k] = v
         return ret
 
-    def _run_path(self, filepath, init_globals=None):
-        fullpath = self.joinpath(filepath)
+    def _run_path(self, filepath, init_globals=None, directory=None):
+        if directory is None:
+            directory = self.directory
+        fullpath = path.join(directory, filepath)
         data = runpy.run_path(fullpath, init_globals)
         data = self._filter_data(data)
         return data
@@ -118,8 +132,12 @@ class Loader(object):
         data = None
         if defaults is not None:
             if isinstance(defaults, basestring):
-                defaults_filepath = self._resolve_filepath(defaults)
-                data = self._run_path(defaults_filepath)
+                defaults_directory, defaults_filepath = path.split(defaults)
+
+                defaults_filepath = self._resolve_filepath_ext(defaults_filepath, 
+                        directory=defaults_directory)
+                data = self._run_path(defaults_filepath, 
+                        directory=defaults_directory)
             elif isinstance(defaults, ModuleType):
                 data = self._filter_data(vars(defaults))
             elif isinstance(defaults, dict):
@@ -154,7 +172,7 @@ class Loader(object):
             f = NamedTemporaryFile(mode="w",
                                    prefix="excc_",
                                    suffix=(".%s" % self._exts[0]),
-                                   dir=self._directory,
+                                   dir=self.directory,
                                    delete=False)
             for line in filepath.readlines():
                 f.write(line)

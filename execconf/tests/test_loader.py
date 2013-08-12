@@ -58,7 +58,8 @@ class TestLoader(unittest.TestCase):
                 loader2.load("except_abspath.py")
 
     def test_load_with_defaults(self):
-        loader1 = Loader(path.join(MODULE_ROOT, "data"), defaults="default.py")
+        loader1 = Loader(path.join(MODULE_ROOT, "data"),
+                defaults=path.join(MODULE_ROOT, "data", "default.py"))
         conf1 = loader1.load("base.py")
         conf2 = loader1.load("base2.py")
 

@@ -34,6 +34,8 @@ def main():
     parser.add_argument("-i", "--input",
                         type=path_type,
                         help="from file. If not set, read from stdin")
+    parser.add_argument("-d", "--defaults",
+                        help="defaults options file")
     parser.add_argument("-o", "--output",
                         # type=path_type,
                         help="write result to output file. If not set, result write to stdout")
@@ -73,7 +75,7 @@ Ex: $ echo 'FOO=True' | execconf -i /some/dir""")
         output = open(args.output, "w")
     else:
         output = sys.stdout
-    
+
     # formatter
     formatter = args.type
     formatter_kw = {}
@@ -107,12 +109,16 @@ Ex: $ echo 'FOO=True' | execconf -i /some/dir""")
         if not args.input:
             raise ValueError("if use stdin --root-dir must be specified")
        
+    # defaults file
+    defaults = args.defaults
+    
     # exts
     exts = args.extension
-    
+
     try:
         loader = ConfigLoader(directory,
                               exts=exts,
+                              defaults=defaults,
                               formatter=formatter_instance)
         result = loader.load(filepath)
     except:
