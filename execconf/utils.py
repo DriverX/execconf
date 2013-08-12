@@ -12,8 +12,8 @@ def make_hashable(obj):
     return obj
 
 class frozendict(dict):
-    def _blocked_attribute(obj):
-        raise AttributeError, "A frozendict cannot be modified."
+    def _blocked_attribute(self, *args, **kwargs):
+        raise AttributeError("A %s cannot be modified." % self.__class__.__name__)
     _blocked_attribute = property(_blocked_attribute)
 
     __delitem__ = __setitem__ = clear = _blocked_attribute
@@ -28,18 +28,18 @@ class frozendict(dict):
                 arg = copy.copy(arg)
                 for k, v in arg.items():
                     if isinstance(v, dict):
-                        arg[k] = frozendict(v)
+                        arg[k] = cls(v)
                     elif isinstance(v, list):
                         v_ = list()
                         for elm in v:
                             if isinstance(elm, dict):
-                                v_.append( frozendict(elm) )
+                                v_.append(cls(elm))
                             else:
-                                v_.append( elm )
+                                v_.append(elm)
                         arg[k] = tuple(v_)
-                args_.append( arg )
+                args_.append(arg)
             else:
-                args_.append( arg )
+                args_.append(arg)
 
         dict.__init__(new, *args_, **kw)
         return new
@@ -55,7 +55,7 @@ class frozendict(dict):
             return h
 
     def __repr__(self):
-        return "frozendict(%s)" % dict.__repr__(self)
+        return "%s(%s)" % (self.__class__.__name__, dict.__repr__(self))
 
 def deep_merge(dleft, dright, depth=-1, _clvl=0):
     '''recursively merges dict's. not just simple a['key'] = b['key'], if

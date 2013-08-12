@@ -39,17 +39,17 @@ class TestConfig(unittest.TestCase):
         
         with self.assertRaises(AttributeError) as cm:
             conf1["foo"] = "baz"
-        self.assertEqual(cm.exception.message, "A frozendict cannot be modified.")
+        self.assertEqual(cm.exception.message, "A Config cannot be modified.")
         self.assertEqual(conf1["foo"], "bar")
         
         with self.assertRaises(AttributeError) as cm:
             conf1["baz"] = "qux"
-        self.assertEqual(cm.exception.message, "A frozendict cannot be modified.")
+        self.assertEqual(cm.exception.message, "A Config cannot be modified.")
         self.assertFalse("baz" in conf1)
         
         with self.assertRaises(AttributeError) as cm:
             conf2["foo"]["bar"] = "qux"
-        self.assertEqual(cm.exception.message, "A frozendict cannot be modified.")
+        self.assertEqual(cm.exception.message, "A Config cannot be modified.")
         self.assertEqual(conf2.foo["bar"], "baz")
 
 
