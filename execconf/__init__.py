@@ -86,10 +86,10 @@ def cli_namespace(args):
     formatter = args.get("type")
     formatter_kw = {}
     if formatter == "yaml":
-        if args.get("yaml_canonical"):
+        if args.get("yaml_canonical", False):
             formatter_kw["canonical"] = True
     elif formatter == "json":
-        if not args.get("json_ugly"):
+        if not args.get("json_ugly", True):
             formatter_kw["pretty_print"] = False
     formatter_instance = type2cls[formatter](**formatter_kw)
 
