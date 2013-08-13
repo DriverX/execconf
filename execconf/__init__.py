@@ -18,7 +18,7 @@ __all__ = ["Config", "Validator", "Builder", "Loader", "ConfigLoader",
 def version():
     return ".".join(map(str, __version__))
 
-def cli(argv=None):
+def cli_parser():
     parser = argparse.ArgumentParser(
             description="Execconf config generator")
     parser.add_argument("-v", "--version",
@@ -59,8 +59,9 @@ Ex: $ echo 'FOO=True' | execconf -i /some/dir""")
                         help="extension check for input file and inner helpers")
     
     # parse sys.argv
-    args = parser.parse_args(argv)
+    return parser
     
+def cli_namespace(args):
     # filepath
     filepath = None
     directory = None
@@ -136,5 +137,7 @@ Ex: $ echo 'FOO=True' | execconf -i /some/dir""")
             output.close()
 
 def main():
-    cli()
+    parser = cli_parser()
+    args = parser.parse_args()
+    cli_namespace(args)
 
