@@ -13,13 +13,8 @@ except ImportError:
 
 # yaml imports
 yaml = None
-YAMLDumper = None
 try:
     import yaml
-    try:
-        from yaml import CDumper as YAMLDumper
-    except ImportError:
-        from yaml import Dumper as YAMLDumper 
 except ImportError:
     pass
 
@@ -55,7 +50,7 @@ class YAMLFormatter(BaseFormatter):
     def format(self, data):
         if not has_yaml():
             raise NotImplementedError("yaml module is not installed")
-        return yaml.dump(data, Dumper=YAMLDumper, canonical=self.canonical)
+        return yaml.safe_dump(data, canonical=self.canonical)
 
 
 class PickleFormatter(BaseFormatter):
