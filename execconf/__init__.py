@@ -62,39 +62,44 @@ Ex: $ echo 'FOO=True' | execconf -i /some/dir""")
     return parser
     
 def cli_namespace(args):
+    args = vars(args)
+
     # filepath
     filepath = None
     directory = None
-    if args.input:
-        directory, filepath = path.split(args.input) 
+
+    ns_input = args.get("input")
+    if ns_input:
+        directory, filepath = path.split(ns_input) 
     else:
         filepath = sys.stdin
     
     # output
     output = None
-    if args.output:
-        output = open(args.output, "w")
+    ns_output = args.get("output")
+    if ns_output:
+        output = open(ns_output, "w")
     else:
         output = sys.stdout
 
     # formatter
-    formatter = args.type
+    formatter = args.get("type")
     formatter_kw = {}
     if formatter == "yaml":
-        if args.yaml_canonical:
+        if args.get("yaml_canonical"):
             formatter_kw["canonical"] = True
     elif formatter == "json":
-        if not args.json_ugly:
+        if not args.get("json_ugly"):
             formatter_kw["pretty_print"] = False
     formatter_instance = type2cls[formatter](**formatter_kw)
 
     # override directory
-    root_dir = args.root_dir
+    root_dir = args.get("root_dir")
     temp_file = None
     if root_dir:
-        if args.input:
+        if ns_input:
             # Do this because directory set to Loader as constantly
-            with open(args.input, "wb") as f:
+            with open(ns_input, "wb") as f:
                 temp_file = NamedTemporaryFile(mode="w",
                                                prefix="excc_",
                                                suffix=filepath,
@@ -107,14 +112,14 @@ def cli_namespace(args):
         else:
             directory = root_dir
     else:
-        if not args.input:
+        if not ns_input:
             raise ValueError("if use stdin --root-dir must be specified")
        
     # defaults file
-    defaults = args.defaults
+    defaults = args.get("defaults")
     
     # exts
-    exts = args.extension
+    exts = args.get("extension")
 
     try:
         loader = ConfigLoader(directory,
@@ -133,7 +138,7 @@ def cli_namespace(args):
         if temp_file:
             os.remove(temp_file.name)
         # stdout not need close
-        if args.output:
+        if ns_output:
             output.close()
 
 def main():
