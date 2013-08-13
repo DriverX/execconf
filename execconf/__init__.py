@@ -47,7 +47,7 @@ def cli_parser():
                         action="store_true",
                         help="use canonical YAML format")
     parser.add_argument("--json-ugly",
-                        action="store_false",
+                        action="store_true",
                         help="not use pretty print JSON formation")
     parser.add_argument("--root-dir",
                         type=path_type,
@@ -89,7 +89,7 @@ def cli_namespace(args):
         if args.get("yaml_canonical", False):
             formatter_kw["canonical"] = True
     elif formatter == "json":
-        if not args.get("json_ugly", True):
+        if args.get("json_ugly", False):
             formatter_kw["pretty_print"] = False
     formatter_instance = type2cls[formatter](**formatter_kw)
 
