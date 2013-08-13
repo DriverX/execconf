@@ -156,7 +156,7 @@ class Loader(object):
         self._extend_data(self._defaults_data)
         self._extend_data(data)
         
-        if extra is not None:
+        if extra:
             self._extend_data(data, extra)
 
         return self._data
@@ -397,7 +397,7 @@ class ConfigLoader(Loader):
         
         self._collect_result_data()
         
-        if extra is not None:
+        if extra:
             self._extend_data(extra)
 
         data = self._data

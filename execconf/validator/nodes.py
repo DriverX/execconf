@@ -386,4 +386,10 @@ LOADER_GLOBALS = {
     "Pass": Pass
 }
 
+CLI_TYPES = {"pass": Pass(),
+             "str": String(),
+             "bool": Boolean(),
+             "int": Integer(),
+             "float": Float()}
+
 

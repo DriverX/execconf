@@ -6,6 +6,7 @@ from os import path
 from tempfile import NamedTemporaryFile
 from .config import Config
 from .validator import Validator
+from .validator.nodes import CLI_TYPES
 from .builder import Builder
 from .loader import Loader, ConfigLoader, ValidatorLoader
 from .formatters import type2cls
@@ -36,7 +37,7 @@ def cli_parser():
                         help="from file. If not set, read from stdin")
     parser.add_argument("-d", "--defaults",
                         help="defaults options file")
-    parser.add_argument("-e", "--validate",
+    parser.add_argument("-a", "--validate",
                         type=path_type,
                         help="validation file")
     parser.add_argument("-o", "--output",
@@ -56,10 +57,15 @@ def cli_parser():
                         type=path_type,
                         help="""use this if set data in stdin.
 Ex: $ echo 'FOO=True' | execconf -i /some/dir""")
-    parser.add_argument("--extension",
+    parser.add_argument("-x", "--extension",
                         nargs="+",
                         default="py",
                         help="extension check for input file and inner helpers")
+    parser.add_argument("-e", "--extra",
+                        nargs=3,
+                        action="append",
+                        metavar=("KEY", "VALUE", "VALIDATE"),
+                        help=("extra options. Validation types: %s" % ",".join(CLI_TYPES.keys())))
     
     # parse sys.argv
     return parser
@@ -124,6 +130,19 @@ def cli_namespace(args):
     # exts
     exts = args.get("extension")
 
+    # extra options
+    extra_data = {}
+    extras = args.get("extra")
+    if extras:
+        for extra in extras:
+            key, value, vtype = extra
+            try:
+                check = CLI_TYPES[vtype]
+            except KeyError:
+                raise ValueError("unknown validation type %s" % vtype)
+            else:
+                extra_data[key] = check.check(value)
+
     # validation
     validator = None
     validate = args.get("validate")
@@ -138,7 +157,7 @@ def cli_namespace(args):
                               defaults=defaults,
                               formatter=formatter_instance,
                               validator=validator)
-        result = loader.load(filepath)
+        result = loader.load(filepath, extra=extra_data)
     except:
         raise
     else:
