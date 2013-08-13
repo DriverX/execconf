@@ -116,8 +116,13 @@ class TestValidatorNodes(unittest.TestCase):
         self.assertEqual(node1.check(123), 123)
         self.assertTrue(isinstance(node1.check(123.0), int))
         self.assertEqual(node1.check(-123.5), -123)
+        self.assertEqual(node1.check("123"), 123)
         with self.assertRaises(ValidatorConvertError):
-            node1.check("123")
+            node1.check("")
+        with self.assertRaises(ValidatorConvertError):
+            node1.check(None)
+        with self.assertRaises(ValidatorConvertError):
+            node1.check("foo")
         
         self.assertEqual(node2.check(123), 123)
         with self.assertRaisesRegexp(ValidatorCheckError, "not equal"):
@@ -198,6 +203,14 @@ class TestValidatorNodes(unittest.TestCase):
 
         self.assertTrue(isinstance(node1.check(1), float))
         self.assertEqual(node1.check(1.2), 1.2)
+        self.assertEqual(node1.check("1.2"), 1.2)
+        self.assertEqual(node1.check("1"), 1.0)
+        with self.assertRaises(ValidatorConvertError):
+            node1.check("")
+        with self.assertRaises(ValidatorConvertError):
+            node1.check(None)
+        with self.assertRaises(ValidatorConvertError):
+            node1.check("foo")
         
         self.assertEqual(node2.check(12.3456), 12.34)
         self.assertEqual(node2.check(12), 12.0)

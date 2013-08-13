@@ -120,12 +120,12 @@ class Integer(Node):
         self._max = max
 
     def convert(self, value):
-        return int(value)
+        try:
+            return int(value)
+        except (ValueError, TypeError):
+            raise ValidatorConvertError(_ConvertErrorDummyMsg % ("Integer", value, type(value)))
     
     def check(self, value):
-        if not isinstance(value, (int, float)):
-            raise ValidatorConvertError(_ConvertErrorDummyMsg % ("Integer", value, type(value)))
-        
         orig_value = value
         value = self.convert(value)
 
@@ -170,12 +170,12 @@ class Float(Integer):
         self._precision = precision
 
     def convert(self, value):
-        return float(value)
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            raise ValidatorConvertError(_ConvertErrorDummyMsg % ("Float", value,type(value)))
 
     def check(self, value):
-        if not isinstance(value, (int, float)):
-            raise ValidatorConvertError(_ConvertErrorDummyMsg % ("Float", value,type(value)))
-        
         orig_value = value
         value = super(Float, self).check(orig_value)
 

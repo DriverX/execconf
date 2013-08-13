@@ -36,6 +36,9 @@ def cli_parser():
                         help="from file. If not set, read from stdin")
     parser.add_argument("-d", "--defaults",
                         help="defaults options file")
+    parser.add_argument("-e", "--validate",
+                        type=path_type,
+                        help="validation file")
     parser.add_argument("-o", "--output",
                         # type=path_type,
                         help="write result to output file. If not set, result write to stdout")
@@ -121,11 +124,20 @@ def cli_namespace(args):
     # exts
     exts = args.get("extension")
 
+    # validation
+    validator = None
+    validate = args.get("validate")
+    if validate:
+        validate_dirname, validate_filepath = path.split(validate)
+        validator_loader = ValidatorLoader(validate_dirname, exts=exts)
+        validator = validator_loader.load(validate_filepath)
+
     try:
         loader = ConfigLoader(directory,
                               exts=exts,
                               defaults=defaults,
-                              formatter=formatter_instance)
+                              formatter=formatter_instance,
+                              validator=validator)
         result = loader.load(filepath)
     except:
         raise
