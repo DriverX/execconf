@@ -1,6 +1,7 @@
 import copy
 
-__all__ = ["frozendict", "make_hashable", "deep_merge"]
+__all__ = ["frozendict", "make_hashable", "deep_merge",
+           "recursive_fmt"]
 
 def make_hashable(obj):
     if isinstance(obj, (list, tuple)):
@@ -75,4 +76,15 @@ def deep_merge(dleft, dright, depth=-1, _clvl=0):
             result[k] = copy.deepcopy(v)
     return result
 
+def recursive_fmt(obj, repl):
+    if isinstance(obj, dict):
+        return dict((recursive_fmt(k, repl), recursive_fmt(v, repl)) for (k, v) in obj.iteritems())
+    elif isinstance(obj, list):
+        return list(recursive_fmt(i, repl) for i in obj)
+    elif isinstance(obj, tuple):
+        return tuple(recursive_fmt(i, repl) for i in obj)
+    elif isinstance(obj, basestring):
+        return obj % repl
+    else:
+        return obj 
 

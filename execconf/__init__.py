@@ -11,7 +11,7 @@ from .builder import Builder
 from .loader import Loader, ConfigLoader, ValidatorLoader
 from .formatters import type2cls
 
-__version__ = (0, 3, 2)
+__version__ = (0, 3, 3)
 
 __all__ = ["Config", "Validator", "Builder", "Loader", "ConfigLoader",
            "ValidatorLoader"]

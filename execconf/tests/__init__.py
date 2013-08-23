@@ -2,6 +2,7 @@ import unittest
 
 def all_tests_modules():
     modules = [
+            "execconf.tests.test_utils",
             "execconf.tests.test_config",
             "execconf.tests.test_validator_nodes",
             "execconf.tests.test_validator",

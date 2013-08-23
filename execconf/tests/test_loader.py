@@ -321,4 +321,28 @@ class TestLoader(unittest.TestCase):
             self.assertTrue(yaml.load(conf2)["BASE2"])
         self.assertTrue(pickle.loads(conf3)["BASE2"])
 
+    def test_replacement(self):
+        loader1 = Loader(path.join(MODULE_ROOT, "data"))
+        conf1 = loader1.load("replacement")
+        
+        loader2 = Loader(path.join(MODULE_ROOT, "data"))
+        conf2 = loader2.load("no_replacement")
+
+        self.assertEqual(len(conf1), 6)
+        self.assertEqual(conf1.FOO, "FOO bar baz")
+        self.assertEqual(conf1.BAR, "FOO BAR baz")
+
+        res = conf1.LIST
+        self.assertEqual(len(res), 3)
+        self.assertEqual(res[0], "FOO")
+        self.assertEqual(res[1], "BAR")
+        self.assertEqual(res[2], 123)
+
+        self.assertEqual(conf1.ANOTHER_FMT, "%(some)s")
+        self.assertEqual(conf1.FMT, "%(new_fmt)s")
+
+        self.assertEqual(len(conf2), 2)
+        self.assertEqual(conf2.FMT, "%%(some)s")
+
+
 

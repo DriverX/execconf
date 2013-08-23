@@ -4,6 +4,7 @@ from os import path
 from types import ModuleType
 import runpy
 from tempfile import NamedTemporaryFile
+from .utils import recursive_fmt
 from .config import Config
 from .helpers import (DummyHelper, IncludeHelper, MergeHelper,
                       MergeOptionHelper)
@@ -411,6 +412,10 @@ class ConfigLoader(Loader):
         return data
 
     def convert(self, data):
+        replacement = data.pop("EXEC_REPLACEMENT", None)
+        if replacement is not None:
+            data = recursive_fmt(data, replacement)
+
         if self._formatter:
             return self._formatter.format(data)
         return Config(data)
