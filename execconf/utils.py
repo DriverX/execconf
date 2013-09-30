@@ -1,7 +1,7 @@
 import copy
 
 __all__ = ["frozendict", "make_hashable", "deep_merge",
-           "recursive_fmt"]
+           "recursive_fmt", "to_primitive"]
 
 def make_hashable(obj):
     if isinstance(obj, (list, tuple)):
@@ -87,4 +87,18 @@ def recursive_fmt(obj, repl):
         return obj % repl
     else:
         return obj 
+
+def to_primitive(obj):
+    if isinstance(obj, dict):
+        return dict((to_primitive(k), to_primitive(v)) for (k, v) in obj.iteritems())
+    elif isinstance(obj, list):
+        return list(to_primitive(i) for i in obj)
+    elif isinstance(obj, tuple):
+        return tuple(to_primitive(i) for i in obj)
+    elif isinstance(obj, str):
+        return str(obj)
+    elif isinstance(obj, unicode):
+        return unicode(obj)
+    else:
+        return obj
 

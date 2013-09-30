@@ -14,7 +14,6 @@ from execconf import (ConfigLoader as Loader, ValidatorLoader,
 from execconf.exceptions import (AbsPathError, NotFoundError,
                                  NotFoundExtsError, UndeclaredExtError,
                                  CircularIncludeError, UnknownFormatterError)
-from execconf.formatters import YAMLFormatter
 import data_defaults
 
 MODULE_ROOT = path.dirname(path.abspath(__file__))
@@ -295,31 +294,21 @@ class TestLoader(unittest.TestCase):
         self.assertTrue(conf1.FILE)
 
     def test_formatters(self):
-        loader1 = Loader(path.join(MODULE_ROOT, "data"), formatter="json")
-        conf1 = loader1.load("base2")
+        loader1 = Loader(path.join(MODULE_ROOT, "data"))
+        conf1 = loader1.load("base2")._to_json()
         
         if yaml:
-            loader2 = Loader(path.join(MODULE_ROOT, "data"), formatter="yaml")
-            conf2 = loader2.load("base2")
+            loader2 = Loader(path.join(MODULE_ROOT, "data"))
+            conf2 = loader2.load("base2")._to_yaml()
         else:
-            with self.assertRaises(UnknownFormatterError):
-                Loader(path.join(MODULE_ROOT, "data"), formatter="yaml")
-            
-            loader2 = Loader(path.join(MODULE_ROOT, "data"), 
-                             formatter=YAMLFormatter())
+            loader2 = Loader(path.join(MODULE_ROOT, "data"))
+            conf2 = loader2.load("base2")
             with self.assertRaises(NotImplementedError):
-                loader2.load("base2")
-
-        loader3 = Loader(path.join(MODULE_ROOT, "data"), formatter="pickle")
-        conf3 = loader3.load("base2")
-        
-        with self.assertRaises(UnknownFormatterError):
-            Loader(path.join(MODULE_ROOT, "data"), formatter="foobar")
-        
+                conf2._to_yaml()
+    
         self.assertTrue(json.loads(conf1)["BASE2"])
         if yaml:
             self.assertTrue(yaml.load(conf2)["BASE2"])
-        self.assertTrue(pickle.loads(conf3)["BASE2"])
 
     def test_replacement(self):
         loader1 = Loader(path.join(MODULE_ROOT, "data"))

@@ -9,9 +9,8 @@ from .validator import Validator
 from .validator.nodes import CLI_TYPES
 from .builder import Builder
 from .loader import Loader, ConfigLoader, ValidatorLoader
-from .formatters import type2cls
 
-__version__ = (0, 3, 3, 1)
+__version__ = (0, 3, 4)
 
 __all__ = ["Config", "Validator", "Builder", "Loader", "ConfigLoader",
            "ValidatorLoader"]
@@ -45,7 +44,7 @@ def cli_parser():
                         help="write result to output file. If not set, result write to stdout")
     parser.add_argument("-t", "--type",
                         default="json",
-                        choices=type2cls.keys(),
+                        choices=("json", "yaml"),
                         help="format output data")
     parser.add_argument("--yaml-canonical",
                         action="store_true",
@@ -90,17 +89,6 @@ def cli_namespace(args):
         output = open(ns_output, "w")
     else:
         output = sys.stdout
-
-    # formatter
-    formatter = args.get("type")
-    formatter_kw = {}
-    if formatter == "yaml":
-        if args.get("yaml_canonical", False):
-            formatter_kw["canonical"] = True
-    elif formatter == "json":
-        if args.get("json_ugly", False):
-            formatter_kw["pretty_print"] = False
-    formatter_instance = type2cls[formatter](**formatter_kw)
 
     # override directory
     root_dir = args.get("root_dir")
@@ -155,12 +143,23 @@ def cli_namespace(args):
         loader = ConfigLoader(directory,
                               exts=exts,
                               defaults=defaults,
-                              formatter=formatter_instance,
                               validator=validator)
-        result = loader.load(filepath, extra=extra_data)
+        conf = loader.load(filepath, extra=extra_data)
     except:
         raise
     else:
+        # formatter
+        formatter = args.get("type")
+        formatter_kw = {}
+        if formatter == "yaml":
+            if args.get("yaml_canonical", False):
+                formatter_kw["canonical"] = True
+            result = conf._to_yaml(**formatter_kw)
+        elif formatter == "json":
+            if args.get("json_ugly", False):
+                formatter_kw["pretty_print"] = False
+            result = conf._to_json(**formatter_kw)
+
         # write result to stream
         output.write(result)
         output.write("\n")

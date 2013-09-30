@@ -11,7 +11,6 @@ from .helpers import (DummyHelper, IncludeHelper, MergeHelper,
 from .validator import Validator
 from .validator.nodes import Node, Dict, LOADER_GLOBALS
 from .builder import Builder
-from .formatters import type2cls
 from .exceptions import (AbsPathError, NotFoundError,
                          NotFoundExtsError, UndeclaredExtError,
                          FileHandleError, CircularIncludeError,
@@ -213,11 +212,8 @@ class ConfigLoader(Loader):
             pass
 
     def __init__(self, directory,
-            exts=None,
-            builder=None,
-            validator=None,
-            formatter=None,
-            **kwargs):
+                 exts=None, builder=None, validator=None,
+                 **kwargs):
         super(ConfigLoader, self).__init__(directory, exts=exts, **kwargs)
 
         if validator is not None and not isinstance(validator, Validator):
@@ -226,16 +222,6 @@ class ConfigLoader(Loader):
             raise TypeError("option builder must be istance of Builder")
         self._validator = validator
         self._builder = builder
-
-        if isinstance(formatter, basestring):
-            try:
-                formatter = type2cls[formatter]
-            except KeyError:
-                raise UnknownFormatterError("unknown formatter name %s" % formatter)
-            else:
-                formatter = formatter()
-
-        self._formatter = formatter
         
         self._included = []
         self._root_filepath = ":root:"
@@ -416,8 +402,6 @@ class ConfigLoader(Loader):
         if replacement is not None:
             data = recursive_fmt(data, replacement)
 
-        if self._formatter:
-            return self._formatter.format(data)
         return Config(data)
 
 
