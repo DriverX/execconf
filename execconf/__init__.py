@@ -10,7 +10,7 @@ from .validator.nodes import CLI_TYPES
 from .builder import Builder
 from .loader import Loader, ConfigLoader, ValidatorLoader
 
-__version__ = (0, 3, 4)
+__version__ = (0, 3, 5)
 
 __all__ = ["Config", "Validator", "Builder", "Loader", "ConfigLoader",
            "ValidatorLoader"]

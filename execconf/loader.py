@@ -388,6 +388,11 @@ class ConfigLoader(Loader):
             self._extend_data(extra)
 
         data = self._data
+        
+        replacement = data.pop("EXEC_REPLACEMENT", None)
+        if replacement is not None:
+            data = recursive_fmt(data, replacement)
+
         if builder:
             data = builder.build(data)
         
@@ -398,10 +403,6 @@ class ConfigLoader(Loader):
         return data
 
     def convert(self, data):
-        replacement = data.pop("EXEC_REPLACEMENT", None)
-        if replacement is not None:
-            data = recursive_fmt(data, replacement)
-
         return Config(data)
 
 
